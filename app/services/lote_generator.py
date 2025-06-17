@@ -38,7 +38,7 @@ def generate_unique_lote_codigo(maquina, tipo_algodon, mic_profile, color_profil
                 seq_num = 1
     return f"{base_code}-{seq_num:03d}"
 
-def generate_lotes_automaticos(allow_mixing_override=False):
+def generate_lotes_automaticos(autorizacion_especial=False): #allow_mixing_override changed to autorizacion_especial
     fardos_para_asignar = Fardo.query.filter(Fardo.lote_id == None, Fardo.dado_de_baja == False)                                      .order_by(Fardo.maquina, Fardo.tipo, Fardo.mic, Fardo.color_predominante, Fardo.fecha).all()
 
     if not fardos_para_asignar:
@@ -60,26 +60,44 @@ def generate_lotes_automaticos(allow_mixing_override=False):
             'color_profile': fardo_color_profile
         }
 
+        # Start: Refined criteria check and lot creation logic
+        is_match_criteria = (
+            current_lote_criteria.get('maquina') == fardo_criteria['maquina'] and
+            current_lote_criteria.get('tipo') == fardo_criteria['tipo'] and
+            current_lote_criteria.get('mic_profile') == fardo_criteria['mic_profile']
+        )
+
+        if not autorizacion_especial:
+            is_match_criteria = is_match_criteria and (current_lote_criteria.get('color_profile') == fardo_criteria['color_profile'])
+
         if not current_lote_fardos:
-            current_lote_criteria = fardo_criteria
+            current_lote_criteria = fardo_criteria.copy()
             current_lote_fardos.append(fardo)
-        elif (len(current_lote_fardos) < 124 and
-            current_lote_criteria['maquina'] == fardo_criteria['maquina'] and
-            current_lote_criteria['tipo'] == fardo_criteria['tipo'] and
-            current_lote_criteria['mic_profile'] == fardo_criteria['mic_profile'] and
-            current_lote_criteria['color_profile'] == fardo_criteria['color_profile']
-        ):
+        elif len(current_lote_fardos) < 124 and is_match_criteria:
             current_lote_fardos.append(fardo)
         else:
+            # Create lot with current_lote_fardos
             if current_lote_fardos:
+                actual_lot_color_profile = current_lote_criteria['color_profile']
+                if autorizacion_especial:
+                    first_fardo_color_in_lote = determine_color_profile(current_lote_fardos[0].color_predominante)
+                    if not all(determine_color_profile(f.color_predominante) == first_fardo_color_in_lote for f in current_lote_fardos):
+                        actual_lot_color_profile = "mixto"
+                    else:
+                        actual_lot_color_profile = first_fardo_color_in_lote
+
                 codigo_lote = generate_unique_lote_codigo(
                     current_lote_criteria['maquina'], current_lote_criteria['tipo'],
-                    current_lote_criteria['mic_profile'], current_lote_criteria['color_profile']
+                    current_lote_criteria['mic_profile'], actual_lot_color_profile
                 )
                 nuevo_lote = Lote(
-                    codigo_lote=codigo_lote, tipo_algodon=current_lote_criteria['tipo'],
-                    maquina=current_lote_criteria['maquina'], mic_profile=current_lote_criteria['mic_profile'],
-                    color_profile=current_lote_criteria['color_profile'], completo=(len(current_lote_fardos) == 124)
+                    codigo_lote=codigo_lote,
+                    tipo_algodon=current_lote_criteria['tipo'],
+                    maquina=current_lote_criteria['maquina'],
+                    mic_profile=current_lote_criteria['mic_profile'],
+                    color_profile=actual_lot_color_profile,
+                    autorizado=autorizacion_especial,
+                    completo=(len(current_lote_fardos) == 124)
                 )
                 db.session.add(nuevo_lote)
                 for f_in_lote in current_lote_fardos:
@@ -92,19 +110,32 @@ def generate_lotes_automaticos(allow_mixing_override=False):
                     db.session.rollback()
                     logger.error(f"LoteGen: Error committing lote {codigo_lote}: {e}")
                     log_messages.append(f"ERROR: Lote {codigo_lote} no guardado. Fardos: {len(current_lote_fardos)}.")
-
+            # Start new lot
             current_lote_fardos = [fardo]
-            current_lote_criteria = fardo_criteria
+            current_lote_criteria = fardo_criteria.copy()
+        # End: Refined criteria check and lot creation logic
 
-        if len(current_lote_fardos) == 124:
+        if len(current_lote_fardos) == 124: # Exactly 124 fardos, create a complete lot
+            actual_lot_color_profile = current_lote_criteria['color_profile']
+            if autorizacion_especial:
+                first_fardo_color_in_lote = determine_color_profile(current_lote_fardos[0].color_predominante)
+                if not all(determine_color_profile(f.color_predominante) == first_fardo_color_in_lote for f in current_lote_fardos):
+                    actual_lot_color_profile = "mixto"
+                else:
+                    actual_lot_color_profile = first_fardo_color_in_lote
+
             codigo_lote = generate_unique_lote_codigo(
                 current_lote_criteria['maquina'], current_lote_criteria['tipo'],
-                current_lote_criteria['mic_profile'], current_lote_criteria['color_profile']
+                current_lote_criteria['mic_profile'], actual_lot_color_profile
             )
             nuevo_lote = Lote(
-                codigo_lote=codigo_lote, tipo_algodon=current_lote_criteria['tipo'],
-                maquina=current_lote_criteria['maquina'], mic_profile=current_lote_criteria['mic_profile'],
-                color_profile=current_lote_criteria['color_profile'], completo=True
+                codigo_lote=codigo_lote,
+                tipo_algodon=current_lote_criteria['tipo'],
+                maquina=current_lote_criteria['maquina'],
+                mic_profile=current_lote_criteria['mic_profile'],
+                color_profile=actual_lot_color_profile,
+                autorizado=autorizacion_especial,
+                completo=True
             )
             db.session.add(nuevo_lote)
             for f_in_lote in current_lote_fardos:
@@ -117,19 +148,33 @@ def generate_lotes_automaticos(allow_mixing_override=False):
                 db.session.rollback()
                 logger.error(f"LoteGen: Error committing full lote {codigo_lote}: {e}")
                 log_messages.append(f"ERROR: Lote completo {codigo_lote} no guardado. Fardos: {len(current_lote_fardos)}.")
-
+            # Reset for next lot
             current_lote_fardos = []
             current_lote_criteria = {}
+    # End of the loop for fardos_para_asignar
 
-    if current_lote_fardos:
+    # Process any remaining fardos that didn't form a full lot of 124
+    if current_lote_fardos: # Check if there are remaining fardos
+        actual_lot_color_profile = current_lote_criteria['color_profile']
+        if autorizacion_especial:
+            first_fardo_color_in_lote = determine_color_profile(current_lote_fardos[0].color_predominante)
+            if not all(determine_color_profile(f.color_predominante) == first_fardo_color_in_lote for f in current_lote_fardos):
+                actual_lot_color_profile = "mixto"
+            else:
+                actual_lot_color_profile = first_fardo_color_in_lote
+
         codigo_lote = generate_unique_lote_codigo(
             current_lote_criteria['maquina'], current_lote_criteria['tipo'],
-            current_lote_criteria['mic_profile'], current_lote_criteria['color_profile']
+            current_lote_criteria['mic_profile'], actual_lot_color_profile
         )
         nuevo_lote = Lote(
-            codigo_lote=codigo_lote, tipo_algodon=current_lote_criteria['tipo'],
-            maquina=current_lote_criteria['maquina'], mic_profile=current_lote_criteria['mic_profile'],
-            color_profile=current_lote_criteria['color_profile'], completo=(len(current_lote_fardos) == 124)
+            codigo_lote=codigo_lote,
+            tipo_algodon=current_lote_criteria['tipo'],
+            maquina=current_lote_criteria['maquina'],
+            mic_profile=current_lote_criteria['mic_profile'],
+            color_profile=actual_lot_color_profile,
+            autorizado=autorizacion_especial,
+            completo=(len(current_lote_fardos) == 124) # This will be False if less than 124
         )
         db.session.add(nuevo_lote)
         for f_in_lote in current_lote_fardos:

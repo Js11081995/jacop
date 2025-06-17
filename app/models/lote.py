@@ -9,6 +9,7 @@ class Lote(db.Model):
     maquina = db.Column(db.String(50), nullable=False)
     mic_profile = db.Column(db.String(50), nullable=False) # REVISED
     color_profile = db.Column(db.String(50), nullable=False, default="normal") # REVISED
+    autorizado = db.Column(db.Boolean, default=False, nullable=False)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     completo = db.Column(db.Boolean, default=False)
     entregado = db.Column(db.Boolean, default=False)

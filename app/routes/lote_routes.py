@@ -16,7 +16,10 @@ def list_lotes():
 @lote_bp.route('/lotes/generate', methods=['POST'])
 def trigger_generate_lotes():
     try:
-        result = generate_lotes_automaticos()
+        # Retrieve the value for autorizacion_especial from form data
+        autorizacion_especial_value = 'autorizacion_checkbox' in request.form
+
+        result = generate_lotes_automaticos(autorizacion_especial=autorizacion_especial_value)
 
         if result.get("log"):
             for log_msg in result["log"]:

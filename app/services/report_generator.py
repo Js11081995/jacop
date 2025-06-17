@@ -197,12 +197,31 @@ def get_reporte_por_maquina_data():
 
         key = (tipo, mic_profile, color_profile)
         if key not in summary[maquina]:
-            summary[maquina][key] = {'available': 0, 'delivered': 0}
+            summary[maquina][key] = {
+                'disponibles': 0,
+                'en_lote': 0,
+                'entregados': 0,
+                'peso_neto_total': 0.0
+            }
 
-        if fardo.lote_id and fardo.lote and fardo.lote.entregado:
-            summary[maquina][key]['delivered'] += 1
+        summary[maquina][key]['peso_neto_total'] += (fardo.peso_neto if fardo.peso_neto else 0.0)
+
+        if fardo.lote_id is None:
+            summary[maquina][key]['disponibles'] += 1
         else:
-            summary[maquina][key]['available'] += 1
+            # Ensure fardo.lote is loaded, especially if using lazy loading (though direct access is common)
+            if fardo.lote: # Check if lote relationship is populated
+                if fardo.lote.entregado:
+                    summary[maquina][key]['entregados'] += 1
+                else:
+                    summary[maquina][key]['en_lote'] += 1
+            else:
+                # This case should ideally not happen if data integrity is maintained
+                # (fardo has lote_id but lote object is not found).
+                # Could log a warning or count as 'disponibles' if lote_id is somehow stale.
+                logger_rpm.warning(f"Fardo {fardo.id} has lote_id {fardo.lote_id} but lote object not found. Counted as 'disponibles'.")
+                summary[maquina][key]['disponibles'] += 1
+
 
     report_data = []
     for maquina, maquina_data in summary.items():
@@ -212,8 +231,10 @@ def get_reporte_por_maquina_data():
                 'tipo': tipo,
                 'mic_profile': mic,
                 'color_profile': color,
-                'available': counts['available'],
-                'delivered': counts['delivered']
+                'disponibles': counts['disponibles'],
+                'en_lote': counts['en_lote'],
+                'entregados': counts['entregados'],
+                'peso_neto_total': round(counts['peso_neto_total'], 2) # Round to 2 decimal places
             })
 
     report_data.sort(key=lambda x: (x['maquina'], x['tipo'], x['mic_profile'], x['color_profile']))
