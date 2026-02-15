@@ -4,9 +4,13 @@ require_once 'db.php';
 // Alertas de insumos bajos
 $insumos_bajos = $pdo->query("SELECT * FROM insumos WHERE cantidad <= stock_minimo")->fetchAll();
 
-// Estadísticas básicas
+// Estadísticas básicas de ventas (minoristas)
 $total_ventas = $pdo->query("SELECT SUM(total) as total FROM ventas")->fetch()['total'] ?: 0;
 $cantidad_ventas = $pdo->query("SELECT COUNT(*) as cuenta FROM ventas")->fetch()['cuenta'];
+
+// Estadísticas de ventas mayoristas
+$total_mayoristas = $pdo->query("SELECT SUM(total) as total FROM pedidos_mayoristas WHERE estado = 'pagado' OR estado = 'entregado'")->fetch()['total'] ?: 0;
+$cantidad_mayoristas = $pdo->query("SELECT COUNT(*) as cuenta FROM pedidos_mayoristas")->fetch()['cuenta'];
 
 // Productos terminados en stock
 $productos_stock = $pdo->query("SELECT * FROM productos WHERE stock_actual > 0")->fetchAll();
@@ -27,12 +31,15 @@ $productos_stock = $pdo->query("SELECT * FROM productos WHERE stock_actual > 0")
             <a href="insumos.php">Insumos</a> |
             <a href="productos.php">Productos</a> |
             <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a>
+            <a href="ventas.php">Ventas</a> |
+            <a href="mayoristas.php">Mayoristas</a> |
+            <a href="promociones.php">Promociones</a> |
+            <a href="calculadora_masa.php">Calculadora</a>
         </nav>
     </header>
 
     <main>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="dashboard-grid">
 
             <section class="card">
                 <h2>Alertas de Insumos</h2>
@@ -54,12 +61,20 @@ $productos_stock = $pdo->query("SELECT * FROM productos WHERE stock_actual > 0")
             </section>
 
             <section class="card">
-                <h2>Resumen de Ventas</h2>
-                <div style="font-size: 1.5em; margin-bottom: 10px;">
-                    Total Recaudado: <strong>$<?php echo number_format($total_ventas, 2); ?></strong>
+                <h2>Resumen Financiero</h2>
+                <div style="font-size: 1.2em; margin-bottom: 10px;">
+                    Minoristas: <strong>Gs. <?php echo number_format($total_ventas, 0, ',', '.'); ?></strong> (<?php echo $cantidad_ventas; ?> op.)
                 </div>
-                <p>Operaciones realizadas: <?php echo $cantidad_ventas; ?></p>
-                <a href="ventas.php" class="btn">Registrar Venta</a>
+                <div style="font-size: 1.2em; margin-bottom: 10px;">
+                    Mayoristas: <strong>Gs. <?php echo number_format($total_mayoristas, 0, ',', '.'); ?></strong> (<?php echo $cantidad_mayoristas; ?> op.)
+                </div>
+                <hr>
+                <div style="font-size: 1.5em; color: #b71c1c;">
+                    Total: <strong>Gs. <?php echo number_format($total_ventas + $total_mayoristas, 0, ',', '.'); ?></strong>
+                </div>
+                <br>
+                <a href="ventas.php" class="btn">Nueva Venta</a>
+                <a href="mayoristas.php" class="btn">Nuevo Pedido Mayorista</a>
             </section>
 
             <section class="card">
@@ -90,10 +105,10 @@ $productos_stock = $pdo->query("SELECT * FROM productos WHERE stock_actual > 0")
             <section class="card">
                 <h2>Acceso Rápido</h2>
                 <ul>
+                    <li><a href="calculadora_masa.php">Calculadora de Masa (bollos)</a></li>
                     <li><a href="insumos.php">Gestionar Materias Primas</a></li>
                     <li><a href="productos.php">Definir Recetas y Precios</a></li>
-                    <li><a href="produccion.php">Entrada de Producción</a></li>
-                    <li><a href="ventas.php">Salida por Ventas</a></li>
+                    <li><a href="promociones.php">Gestionar Combos y Promos</a></li>
                 </ul>
             </section>
 

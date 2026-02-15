@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
 
-            // 1. Obtener datos del producto
             $stmt = $pdo->prepare("SELECT nombre, stock_actual, precio_venta FROM productos WHERE id = ?");
             $stmt->execute([$producto_id]);
             $producto = $stmt->fetch();
@@ -27,16 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $total = $cantidad_vendida * $producto['precio_venta'];
 
-            // 2. Descontar stock del producto
             $stmt_update = $pdo->prepare("UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?");
             $stmt_update->execute([$cantidad_vendida, $producto_id]);
 
-            // 3. Registrar la venta
             $stmt_log = $pdo->prepare("INSERT INTO ventas (producto_id, cantidad, precio_unitario, total) VALUES (?, ?, ?, ?)");
             $stmt_log->execute([$producto_id, $cantidad_vendida, $producto['precio_venta'], $total]);
 
             $pdo->commit();
-            $mensaje = "Venta registrada exitosamente por un total de $" . number_format($total, 2);
+            $mensaje = "Venta registrada exitosamente por un total de Gs. " . number_format($total, 0, ',', '.');
         } catch (Exception $e) {
             $pdo->rollBack();
             $error = "Error: " . $e->getMessage();
@@ -44,10 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Obtener productos para el selector
 $productos = $pdo->query("SELECT id, nombre, stock_actual, precio_venta FROM productos ORDER BY nombre ASC")->fetchAll();
-
-// Obtener historial de ventas
 $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v JOIN productos pr ON v.producto_id = pr.id ORDER BY v.fecha DESC LIMIT 10")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -65,7 +59,10 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
             <a href="insumos.php">Insumos</a> |
             <a href="productos.php">Productos</a> |
             <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a>
+            <a href="ventas.php">Ventas</a> |
+            <a href="mayoristas.php">Mayoristas</a> |
+            <a href="promociones.php">Promociones</a> |
+            <a href="calculadora_masa.php">Calculadora</a>
         </nav>
     </header>
 
@@ -78,13 +75,13 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
         <?php endif; ?>
 
         <section>
-            <h2>Registrar Nueva Venta</h2>
+            <h2>Registrar Nueva Venta (Minorista)</h2>
             <form method="POST">
                 <input type="hidden" name="accion" value="registrar_venta">
                 <select name="producto_id" required>
                     <option value="">Seleccionar Producto...</option>
                     <?php foreach ($productos as $p): ?>
-                        <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['nombre']); ?> ($<?php echo $p['precio_venta']; ?>) - Stock: <?php echo $p['stock_actual']; ?></option>
+                        <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['nombre']); ?> (Gs. <?php echo number_format($p['precio_venta'], 0, ',', '.'); ?>) - Stock: <?php echo $p['stock_actual']; ?></option>
                     <?php endforeach; ?>
                 </select>
                 <input type="number" name="cantidad" placeholder="Cantidad" min="1" required>
@@ -93,7 +90,7 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
         </section>
 
         <section>
-            <h2>Historial de Ventas (Últimos 10)</h2>
+            <h2>Historial de Ventas Recientes</h2>
             <table>
                 <thead>
                     <tr>
@@ -110,8 +107,8 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
                             <td><?php echo $v['fecha']; ?></td>
                             <td><?php echo htmlspecialchars($v['producto_nombre']); ?></td>
                             <td><?php echo $v['cantidad']; ?></td>
-                            <td>$<?php echo number_format($v['precio_unitario'], 2); ?></td>
-                            <td>$<?php echo number_format($v['total'], 2); ?></td>
+                            <td>Gs. <?php echo number_format($v['precio_unitario'], 0, ',', '.'); ?></td>
+                            <td>Gs. <?php echo number_format($v['total'], 0, ',', '.'); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

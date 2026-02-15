@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
 
-            // 1. Obtener la receta
             $stmt = $pdo->prepare("SELECT * FROM recetas WHERE producto_id = ?");
             $stmt->execute([$producto_id]);
             $receta = $stmt->fetchAll();
@@ -21,11 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("El producto no tiene una receta definida.");
             }
 
-            // 2. Verificar y descontar insumos
             foreach ($receta as $item) {
                 $cantidad_necesaria = $item['cantidad_requerida'] * $cantidad_producida;
 
-                // Verificar stock actual del insumo
                 $stmt_ins = $pdo->prepare("SELECT nombre, cantidad FROM insumos WHERE id = ?");
                 $stmt_ins->execute([$item['insumo_id']]);
                 $insumo = $stmt_ins->fetch();
@@ -34,16 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("Stock insuficiente de " . $insumo['nombre'] . ". Necesario: $cantidad_necesaria, Disponible: " . $insumo['cantidad']);
                 }
 
-                // Descontar
                 $stmt_update_ins = $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE id = ?");
                 $stmt_update_ins->execute([$cantidad_necesaria, $item['insumo_id']]);
             }
 
-            // 3. Aumentar stock del producto
             $stmt_prod = $pdo->prepare("UPDATE productos SET stock_actual = stock_actual + ? WHERE id = ?");
             $stmt_prod->execute([$cantidad_producida, $producto_id]);
 
-            // 4. Registrar la producción
             $stmt_log = $pdo->prepare("INSERT INTO produccion (producto_id, cantidad) VALUES (?, ?)");
             $stmt_log->execute([$producto_id, $cantidad_producida]);
 
@@ -56,10 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Obtener productos para el selector
 $productos = $pdo->query("SELECT id, nombre FROM productos ORDER BY nombre ASC")->fetchAll();
-
-// Obtener historial de producción
 $historial = $pdo->query("SELECT p.*, pr.nombre as producto_nombre FROM produccion p JOIN productos pr ON p.producto_id = pr.id ORDER BY p.fecha DESC LIMIT 10")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -77,7 +68,10 @@ $historial = $pdo->query("SELECT p.*, pr.nombre as producto_nombre FROM producci
             <a href="insumos.php">Insumos</a> |
             <a href="productos.php">Productos</a> |
             <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a>
+            <a href="ventas.php">Ventas</a> |
+            <a href="mayoristas.php">Mayoristas</a> |
+            <a href="promociones.php">Promociones</a> |
+            <a href="calculadora_masa.php">Calculadora</a>
         </nav>
     </header>
 

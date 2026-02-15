@@ -3,7 +3,6 @@ require_once 'db.php';
 
 $mensaje = '';
 
-// Procesar formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion'])) {
         if ($_POST['accion'] === 'crear_producto') {
@@ -26,10 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Obtener productos
 $productos = $pdo->query("SELECT * FROM productos ORDER BY nombre ASC")->fetchAll();
-
-// Obtener insumos para los selectores de recetas
 $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY nombre ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -47,7 +43,10 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
             <a href="insumos.php">Insumos</a> |
             <a href="productos.php">Productos</a> |
             <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a>
+            <a href="ventas.php">Ventas</a> |
+            <a href="mayoristas.php">Mayoristas</a> |
+            <a href="promociones.php">Promociones</a> |
+            <a href="calculadora_masa.php">Calculadora</a>
         </nav>
     </header>
 
@@ -60,8 +59,8 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
             <h2>Añadir Nuevo Producto (Pizza)</h2>
             <form method="POST">
                 <input type="hidden" name="accion" value="crear_producto">
-                <input type="text" name="nombre" placeholder="Nombre (ej. Pizza Muzza)" required>
-                <input type="number" step="0.01" name="precio_venta" placeholder="Precio de Venta" required>
+                <input type="text" name="nombre" placeholder="Nombre (ej. Muzzarella Clasica)" required>
+                <input type="number" name="precio_venta" placeholder="Precio de Venta (Gs.)" required>
                 <button type="submit">Guardar Producto</button>
             </form>
         </section>
@@ -69,12 +68,12 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
         <section>
             <h2>Listado de Productos</h2>
             <?php foreach ($productos as $producto): ?>
-                <div class="producto-card" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
-                    <form method="POST" style="display:block;">
+                <div class="producto-card">
+                    <form method="POST" style="display:block; background:none; border:none; padding:0;">
                         <input type="hidden" name="id" value="<?php echo $producto['id']; ?>">
                         <h3>
                             <input type="text" name="nombre" value="<?php echo htmlspecialchars($producto['nombre']); ?>">
-                            - $ <input type="number" step="0.01" name="precio_venta" value="<?php echo $producto['precio_venta']; ?>">
+                            - Gs. <input type="number" name="precio_venta" value="<?php echo $producto['precio_venta']; ?>">
                             <button type="submit" name="accion" value="editar_producto">Actualizar</button>
                         </h3>
                         <p>Stock Actual: <strong><?php echo $producto['stock_actual']; ?></strong> unidades</p>
@@ -104,10 +103,10 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                                 <tr>
                                     <td><?php echo htmlspecialchars($item['nombre']); ?> (<?php echo htmlspecialchars($item['unidad']); ?>)</td>
                                     <td><?php echo $item['cantidad_requerida']; ?></td>
-                                    <td>$<?php echo number_format($item['precio_unitario'], 2); ?></td>
-                                    <td>$<?php echo number_format($subtotal, 2); ?></td>
+                                    <td>Gs. <?php echo number_format($item['precio_unitario'], 0, ',', '.'); ?></td>
+                                    <td>Gs. <?php echo number_format($subtotal, 0, ',', '.'); ?></td>
                                     <td>
-                                        <form method="POST">
+                                        <form method="POST" style="background:none; border:none; padding:0;">
                                             <input type="hidden" name="id" value="<?php echo $item['id']; ?>">
                                             <button type="submit" name="accion" value="eliminar_insumo_receta" onclick="return confirm('¿Eliminar de la receta?')">x</button>
                                         </form>
@@ -118,12 +117,12 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                         <tfoot>
                             <tr>
                                 <th colspan="3">Costo de Producción Total</th>
-                                <th>$<?php echo number_format($costo_total, 2); ?></th>
+                                <th>Gs. <?php echo number_format($costo_total, 0, ',', '.'); ?></th>
                                 <th></th>
                             </tr>
                             <tr>
                                 <th colspan="3">Ganancia Estimada por Unidad</th>
-                                <th style="color: green;">$<?php echo number_format($producto['precio_venta'] - $costo_total, 2); ?></th>
+                                <th style="color: green;">Gs. <?php echo number_format($producto['precio_venta'] - $costo_total, 0, ',', '.'); ?></th>
                                 <th></th>
                             </tr>
                         </tfoot>

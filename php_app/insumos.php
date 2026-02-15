@@ -3,7 +3,6 @@ require_once 'db.php';
 
 $mensaje = '';
 
-// Procesar formularios
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion'])) {
         if ($_POST['accion'] === 'crear') {
@@ -22,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Obtener insumos
 $insumos = $pdo->query("SELECT * FROM insumos ORDER BY nombre ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -40,7 +38,10 @@ $insumos = $pdo->query("SELECT * FROM insumos ORDER BY nombre ASC")->fetchAll();
             <a href="insumos.php">Insumos</a> |
             <a href="productos.php">Productos</a> |
             <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a>
+            <a href="ventas.php">Ventas</a> |
+            <a href="mayoristas.php">Mayoristas</a> |
+            <a href="promociones.php">Promociones</a> |
+            <a href="calculadora_masa.php">Calculadora</a>
         </nav>
     </header>
 
@@ -53,14 +54,12 @@ $insumos = $pdo->query("SELECT * FROM insumos ORDER BY nombre ASC")->fetchAll();
             <h2>Añadir Nuevo Insumo</h2>
             <form method="POST">
                 <input type="hidden" name="accion" value="crear">
-                <div class="form-group">
-                    <input type="text" name="nombre" placeholder="Nombre (ej. Harina)" required>
-                    <input type="number" step="0.01" name="cantidad" placeholder="Cantidad Inicial" required>
-                    <input type="text" name="unidad" placeholder="Unidad (ej. Kg, L)" required>
-                    <input type="number" step="0.01" name="stock_minimo" placeholder="Stock Mínimo" required>
-                    <input type="number" step="0.01" name="precio_unitario" placeholder="Precio Unitario" required>
-                    <button type="submit">Guardar</button>
-                </div>
+                <input type="text" name="nombre" placeholder="Nombre (ej. Harina)" required>
+                <input type="number" step="0.01" name="cantidad" placeholder="Cantidad Inicial" required>
+                <input type="text" name="unidad" placeholder="Unidad (ej. Kg, L)" required>
+                <input type="number" step="0.01" name="stock_minimo" placeholder="Stock Mínimo" required>
+                <input type="number" step="1" name="precio_unitario" placeholder="Costo Unitario (Gs.)" required>
+                <button type="submit">Guardar</button>
             </form>
         </section>
 
@@ -73,7 +72,7 @@ $insumos = $pdo->query("SELECT * FROM insumos ORDER BY nombre ASC")->fetchAll();
                         <th>Cantidad Actual</th>
                         <th>Unidad</th>
                         <th>Stock Mínimo</th>
-                        <th>Precio Unitario</th>
+                        <th>Costo Unitario (Gs.)</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -88,7 +87,7 @@ $insumos = $pdo->query("SELECT * FROM insumos ORDER BY nombre ASC")->fetchAll();
                             <td><input type="number" step="0.01" name="cantidad" value="<?php echo $insumo['cantidad']; ?>" form="form-edit-<?php echo $insumo['id']; ?>"></td>
                             <td><input type="text" name="unidad" value="<?php echo htmlspecialchars($insumo['unidad']); ?>" form="form-edit-<?php echo $insumo['id']; ?>"></td>
                             <td><input type="number" step="0.01" name="stock_minimo" value="<?php echo $insumo['stock_minimo']; ?>" form="form-edit-<?php echo $insumo['id']; ?>"></td>
-                            <td><input type="number" step="0.01" name="precio_unitario" value="<?php echo $insumo['precio_unitario']; ?>" form="form-edit-<?php echo $insumo['id']; ?>"></td>
+                            <td><input type="number" step="1" name="precio_unitario" value="<?php echo $insumo['precio_unitario']; ?>" form="form-edit-<?php echo $insumo['id']; ?>"></td>
                             <td>
                                 <?php if ($insumo['cantidad'] <= 0): ?>
                                     <span class="badge-error">AGOTADO</span>
