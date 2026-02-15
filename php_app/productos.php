@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $productos = $pdo->query("SELECT * FROM productos ORDER BY nombre ASC")->fetchAll();
-$todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY nombre ASC")->fetchAll();
+$todos_insumos = $pdo->query("SELECT id, nombre, unidad, precio_unitario FROM insumos ORDER BY nombre ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -43,40 +43,12 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
     <title>Gestión de Productos y Recetas - El Horno Rojo</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .producto-card {
-            border: 2px solid #b71c1c;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-            background: #fff;
-        }
-        .recipe-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .recipe-table th, .recipe-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        .recipe-table th {
-            background-color: #f2f2f2;
-        }
-        .btn-delete {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .cost-summary {
-            margin-top: 15px;
-            padding: 10px;
-            background: #f9f9f9;
-            border-left: 5px solid #b71c1c;
-        }
+        .producto-card { border: 2px solid #b71c1c; border-radius: 8px; padding: 20px; margin-bottom: 30px; background: #fff; }
+        .recipe-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .recipe-table th, .recipe-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .recipe-table th { background-color: #f2f2f2; }
+        .btn-delete { background-color: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+        .cost-summary { margin-top: 15px; padding: 10px; background: #f9f9f9; border-left: 5px solid #b71c1c; }
     </style>
 </head>
 <body>
@@ -105,10 +77,6 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
 
         <section>
             <h2>Listado de Productos y sus Recetas</h2>
-            <?php if (empty($productos)): ?>
-                <p>No hay productos registrados. Comienza creando uno arriba.</p>
-            <?php endif; ?>
-
             <?php foreach ($productos as $producto): ?>
                 <div class="producto-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -121,7 +89,7 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                         </form>
                         <form method="POST" style="background: none; border: none; padding: 0;">
                             <input type="hidden" name="id" value="<?php echo $producto['id']; ?>">
-                            <button type="submit" name="accion" value="eliminar_producto" class="btn-delete" onclick="return confirm('¿Eliminar producto y su receta?')">Eliminar Producto</button>
+                            <button type="submit" name="accion" value="eliminar_producto" class="btn-delete" onclick="return confirm('¿Eliminar producto y su receta?')">Eliminar</button>
                         </form>
                     </div>
 
@@ -133,9 +101,9 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                             <tr>
                                 <th>Insumo</th>
                                 <th>Cantidad</th>
-                                <th>Costo Unit.</th>
-                                <th>Subtotal</th>
-                                <th>Eliminar</th>
+                                <th>Precio (Kg/L/Ud)</th>
+                                <th>Costo Ingrediente</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -145,7 +113,9 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                             $receta_items = $stmt->fetchAll();
                             $costo_total = 0;
                             foreach ($receta_items as $item):
-                                $subtotal = $item['cantidad_requerida'] * $item['precio_unitario'];
+                                // Lógica de conversión de precio por kilo/litro
+                                $divisor = ($item['unidad'] === 'g' || $item['unidad'] === 'ml') ? 1000 : 1;
+                                $subtotal = ($item['cantidad_requerida'] / $divisor) * $item['precio_unitario'];
                                 $costo_total += $subtotal;
                             ?>
                                 <tr>
@@ -165,7 +135,7 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                     </table>
 
                     <div class="cost-summary">
-                        <strong>Costo Producción: Gs. <?php echo number_format($costo_total, 0, ',', '.'); ?></strong> |
+                        <strong>Costo de Producción: Gs. <?php echo number_format($costo_total, 0, ',', '.'); ?></strong> |
                         <strong style="color: #2e7d32;">Ganancia: Gs. <?php echo number_format($producto['precio_venta'] - $costo_total, 0, ',', '.'); ?></strong>
                     </div>
 
@@ -176,7 +146,10 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
                         <select name="insumo_id" required>
                             <option value="">Seleccionar Insumo...</option>
                             <?php foreach ($todos_insumos as $ins): ?>
-                                <option value="<?php echo $ins['id']; ?>"><?php echo htmlspecialchars($ins['nombre']); ?> (<?php echo htmlspecialchars($ins['unidad']); ?>)</option>
+                                <option value="<?php echo $ins['id']; ?>">
+                                    <?php echo htmlspecialchars($ins['nombre']); ?>
+                                    (<?php echo $ins['unidad']; ?>) - Gs. <?php echo number_format($ins['precio_unitario'], 0, ',', '.'); ?>/<?php echo $ins['unidad'] === 'g' ? 'Kg' : ($ins['unidad'] === 'ml' ? 'L' : $ins['unidad']); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                         <input type="number" step="0.001" name="cantidad_requerida" placeholder="Cantidad" required style="width: 80px;">

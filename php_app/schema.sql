@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS insumos (
     cantidad REAL DEFAULT 0,
     unidad TEXT NOT NULL,
     stock_minimo REAL DEFAULT 0,
-    precio_unitario REAL DEFAULT 0
+    precio_unitario REAL DEFAULT 0,
+    tipo TEXT DEFAULT 'materia_prima'
 );
 
 CREATE TABLE IF NOT EXISTS productos (
@@ -65,23 +66,23 @@ CREATE TABLE IF NOT EXISTS promociones (
 );
 
 -- Insumos Básicos
-INSERT OR IGNORE INTO insumos (nombre, unidad, stock_minimo, precio_unitario) VALUES
-('Harina', 'Kg', 10, 5000),
-('Agua', 'L', 5, 1000),
-('Aceite', 'L', 1, 15000),
-('Sal', 'g', 500, 3),
-('Levadura Seca', 'g', 100, 80),
-('Muzzarella', 'g', 1000, 45),
-('Pomodoro', 'g', 500, 15),
-('Pesto', 'g', 100, 60),
-('Pepperoni', 'g', 200, 90),
-('Cherrys', 'g', 200, 25),
-('Catupiry', 'g', 200, 55),
-('Queso Azul', 'g', 100, 120),
-('Parmesano', 'g', 100, 100),
-('Bolsa Gofrada', 'unidades', 10, 4850),
-('Oregano', 'g', 100, 15),
-('Aceitunas', 'g', 200, 30),
-('Tomates y Ajos Confitados', 'g', 100, 50),
-('Cebolla Morada', 'g', 200, 10),
-('Bollo de Masa (250g)', 'unidades', 20, 0); -- El costo se calculará o será el de los insumos
+INSERT OR IGNORE INTO insumos (nombre, unidad, stock_minimo, precio_unitario, tipo) VALUES
+('Harina', 'Kg', 10, 5000, 'materia_prima'),
+('Agua', 'L', 5, 1000, 'materia_prima'),
+('Aceite', 'L', 1, 15000, 'materia_prima'),
+('Sal', 'g', 500, 3000, 'materia_prima'), -- Precio por Kg ahora (aunque unidad sea g)
+('Levadura Seca', 'g', 100, 80000, 'materia_prima'), -- Precio por Kg
+('Muzzarella', 'g', 1000, 45000, 'materia_prima'), -- Precio por Kg
+('Pomodoro', 'g', 500, 15000, 'materia_prima'),
+('Pesto', 'g', 100, 60000, 'materia_prima'),
+('Pepperoni', 'g', 200, 90000, 'materia_prima'),
+('Cherrys', 'g', 200, 25000, 'materia_prima'),
+('Catupiry', 'g', 200, 55000, 'materia_prima'),
+('Queso Azul', 'g', 100, 120000, 'materia_prima'),
+('Parmesano', 'g', 100, 100000, 'materia_prima'),
+('Bolsa Gofrada', 'unidades', 10, 4850, 'materia_prima'),
+('Oregano', 'g', 100, 15000, 'materia_prima'),
+('Aceitunas', 'g', 200, 30000, 'materia_prima'),
+('Tomates y Ajos Confitados', 'g', 100, 50000, 'materia_prima'),
+('Cebolla Morada', 'g', 200, 10000, 'materia_prima'),
+('Prepizza (Bollo 250g)', 'unidades', 20, 0, 'elaborado');

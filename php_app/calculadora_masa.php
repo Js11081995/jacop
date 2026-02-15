@@ -16,6 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     try {
         $pdo->beginTransaction();
 
+        // Obtener precios actuales para calcular costo
+        $insumos_query = $pdo->query("SELECT nombre, precio_unitario, unidad FROM insumos WHERE nombre IN ('Harina', 'Agua', 'Aceite', 'Sal', 'Levadura Seca')")->fetchAll(PDO::FETCH_UNIQUE|PDO::FETCH_ASSOC);
+
+        $costo_batch = 0;
+        $costo_batch += $harina * $insumos_query['Harina']['precio_unitario'];
+        $costo_batch += $agua * $insumos_query['Agua']['precio_unitario'];
+        $costo_batch += $aceite * $insumos_query['Aceite']['precio_unitario'];
+        $costo_batch += ($sal / 1000) * $insumos_query['Sal']['precio_unitario'];
+        $costo_batch += ($levadura / 1000) * $insumos_query['Levadura Seca']['precio_unitario'];
+
+        $costo_por_bollo = $costo_batch / $bollos;
+
         // 1. Descontar Harina
         $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Harina'")->execute([$harina]);
         // 2. Descontar Agua
@@ -27,11 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
         // 5. Descontar Levadura
         $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Levadura Seca'")->execute([$levadura]);
 
-        // 6. Sumar Bollos
-        $pdo->prepare("UPDATE insumos SET cantidad = cantidad + ? WHERE nombre = 'Bollo de Masa (250g)'")->execute([$bollos]);
+        // 6. Sumar Bollos y Actualizar su costo
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad + ?, precio_unitario = ?, tipo = 'elaborado' WHERE nombre LIKE 'Prepizza%' OR nombre LIKE 'Bollo%'")->execute([$bollos, $costo_por_bollo]);
 
         $pdo->commit();
-        $mensaje = "Producción de $bollos bollos registrada exitosamente. Se han descontado las materias primas del inventario.";
+        $mensaje = "Producción de $bollos bollos registrada. Costo calculado por unidad: Gs. " . number_format($costo_por_bollo, 0, ',', '.');
     } catch (Exception $e) {
         $pdo->rollBack();
         $mensaje = "Error al registrar producción: " . $e->getMessage();
@@ -49,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     <?php include 'header.php'; ?>
 
     <main>
-        <h1>Calculadora de Masa</h1>
+        <h1>Producción de Prepizzas (Masa)</h1>
 
         <?php if ($mensaje): ?>
             <div style="background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 5px solid #2e7d32;">
@@ -58,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
         <?php endif; ?>
 
         <section class="card">
-            <h2>Cálculo de Proporciones</h2>
+            <h2>Cálculo de Proporciones (Fórmula 70% Hidratación)</h2>
             <form method="GET">
                 <label for="harina">Kilogramos de Harina a preparar:</label>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -84,11 +96,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
                         Bollos resultantes (250g): <strong><?php echo $bollos; ?> unidades</strong>
                     </p>
 
-                    <form method="POST" onsubmit="return confirm('¿Confirmas que has preparado esta masa? Se descontarán los ingredientes del stock y se sumarán los bollos.')">
+                    <form method="POST" onsubmit="return confirm('¿Confirmas que has preparado esta masa? Se descontarán las materias primas del inventario y se sumarán los bollos al stock de Prepizzas.')">
                         <input type="hidden" name="harina" value="<?php echo $harina; ?>">
                         <input type="hidden" name="accion" value="registrar_produccion">
                         <button type="submit" class="btn" style="width: 100%; font-size: 1.2em; padding: 15px; background: #2e7d32;">
-                            CONFIRMAR Y REGISTRAR PRODUCCIÓN
+                            REGISTRAR PRODUCCIÓN Y ACTUALIZAR STOCK
                         </button>
                     </form>
                 </div>
@@ -96,14 +108,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
         </section>
 
         <section class="card" style="margin-top: 20px;">
-            <h3>Fórmulas de la Casa (por cada 1 Kg de harina):</h3>
+            <h3>Proporciones Utilizadas (por cada 1 Kg de harina):</h3>
             <table style="width: 100%;">
-                <tr><td>Hidratación</td><td>70%</td></tr>
-                <tr><td>Agua</td><td>670 ml</td></tr>
-                <tr><td>Aceite</td><td>30 ml</td></tr>
+                <tr><td>Harina</td><td>1000 g</td></tr>
+                <tr><td>Agua (67%)</td><td>670 ml</td></tr>
+                <tr><td>Aceite (3%)</td><td>30 ml</td></tr>
                 <tr><td>Sal</td><td>20 g</td></tr>
                 <tr><td>Levadura Seca</td><td>1 g</td></tr>
-                <tr><td>Peso por Bollo</td><td>250 g</td></tr>
+                <tr style="border-top: 2px solid #ddd; font-weight: bold;"><td>Peso Final Prepizza</td><td>250 g</td></tr>
             </table>
         </section>
     </main>
