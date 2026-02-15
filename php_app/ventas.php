@@ -8,6 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion']) && $_POST['accion'] === 'registrar_venta') {
         $producto_id = $_POST['producto_id'];
         $cantidad_vendida = $_POST['cantidad'];
+        $cliente = $_POST['cliente'];
 
         try {
             $pdo->beginTransaction();
@@ -29,8 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt_update = $pdo->prepare("UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?");
             $stmt_update->execute([$cantidad_vendida, $producto_id]);
 
-            $stmt_log = $pdo->prepare("INSERT INTO ventas (producto_id, cantidad, precio_unitario, total) VALUES (?, ?, ?, ?)");
-            $stmt_log->execute([$producto_id, $cantidad_vendida, $producto['precio_venta'], $total]);
+            $stmt_log = $pdo->prepare("INSERT INTO ventas (cliente, producto_id, cantidad, precio_unitario, total) VALUES (?, ?, ?, ?, ?)");
+            $stmt_log->execute([$cliente, $producto_id, $cantidad_vendida, $producto['precio_venta'], $total]);
 
             $pdo->commit();
             $mensaje = "Venta registrada exitosamente por un total de Gs. " . number_format($total, 0, ',', '.');
@@ -66,6 +67,7 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
             <h2>Registrar Nueva Venta (Minorista)</h2>
             <form method="POST">
                 <input type="hidden" name="accion" value="registrar_venta">
+                <input type="text" name="cliente" placeholder="Nombre del Cliente" required>
                 <select name="producto_id" required>
                     <option value="">Seleccionar Producto...</option>
                     <?php foreach ($productos as $p): ?>
@@ -83,6 +85,7 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
                 <thead>
                     <tr>
                         <th>Fecha</th>
+                        <th>Cliente</th>
                         <th>Producto</th>
                         <th>Cantidad</th>
                         <th>Precio Unit.</th>
@@ -93,6 +96,7 @@ $historial = $pdo->query("SELECT v.*, pr.nombre as producto_nombre FROM ventas v
                     <?php foreach ($historial as $v): ?>
                         <tr>
                             <td><?php echo $v['fecha']; ?></td>
+                            <td><?php echo htmlspecialchars($v['cliente']); ?></td>
                             <td><?php echo htmlspecialchars($v['producto_nombre']); ?></td>
                             <td><?php echo $v['cantidad']; ?></td>
                             <td>Gs. <?php echo number_format($v['precio_unitario'], 0, ',', '.'); ?></td>

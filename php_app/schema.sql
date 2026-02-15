@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS recetas (
     insumo_id INTEGER,
     cantidad_requerida REAL,
     FOREIGN KEY (producto_id) REFERENCES productos(id),
-    FOREIGN KEY (insumo_id) REFERENCES insumos(id)
+    FOREIGN KEY (insumo_id) REFERENCES insumos(id),
+    UNIQUE(producto_id, insumo_id)
 );
 
 CREATE TABLE IF NOT EXISTS produccion (
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS produccion (
 
 CREATE TABLE IF NOT EXISTS ventas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cliente TEXT,
     producto_id INTEGER,
     cantidad INTEGER,
     precio_unitario REAL,
@@ -77,7 +79,12 @@ INSERT OR IGNORE INTO insumos (id, nombre, unidad, stock_minimo, precio_unitario
 (14, 'Catupiry', 'g', 200, 55),
 (15, 'Queso Azul', 'g', 100, 120),
 (16, 'Parmesano', 'g', 100, 100),
-(17, 'Bolsa Gofrada', 'unidades', 10, 4850);
+(17, 'Bolsa Gofrada', 'unidades', 10, 4850),
+(18, 'Oregano', 'g', 100, 15),
+(19, 'Aceitunas', 'g', 200, 30),
+(20, 'Tomates y Ajos Confitados', 'g', 100, 50),
+(21, 'Cebolla Morada', 'g', 200, 10),
+(22, 'Pomodoro', 'g', 500, 15);
 
 -- Semillas iniciales (Productos)
 INSERT OR IGNORE INTO productos (id, nombre, precio_venta) VALUES
@@ -90,16 +97,16 @@ INSERT OR IGNORE INTO productos (id, nombre, precio_venta) VALUES
 -- Recetas
 -- Muzzarella Clasica
 INSERT OR IGNORE INTO recetas (producto_id, insumo_id, cantidad_requerida) VALUES
-(3, 4, 0.145), (3, 5, 0.097), (3, 6, 0.004), (3, 7, 2.9), (3, 8, 0.15), (3, 9, 150), (3, 10, 80), (3, 17, 1);
+(3, 4, 0.145), (3, 5, 0.097), (3, 6, 0.004), (3, 7, 2.9), (3, 8, 0.15), (3, 22, 45), (3, 9, 120), (3, 19, 5), (3, 18, 3), (3, 17, 1);
 -- Muzza y Pesto
 INSERT OR IGNORE INTO recetas (producto_id, insumo_id, cantidad_requerida) VALUES
-(4, 4, 0.145), (4, 5, 0.097), (4, 6, 0.004), (4, 7, 2.9), (4, 8, 0.15), (4, 9, 120), (4, 10, 80), (4, 11, 30), (4, 17, 1);
+(4, 4, 0.145), (4, 5, 0.097), (4, 6, 0.004), (4, 7, 2.9), (4, 8, 0.15), (4, 22, 45), (4, 9, 120), (4, 19, 5), (4, 11, 45), (4, 18, 3), (4, 17, 1);
 -- Pepperoni
 INSERT OR IGNORE INTO recetas (producto_id, insumo_id, cantidad_requerida) VALUES
-(5, 4, 0.145), (5, 5, 0.097), (5, 6, 0.004), (5, 7, 2.9), (5, 8, 0.15), (5, 9, 120), (5, 10, 80), (5, 12, 40), (5, 17, 1);
+(5, 4, 0.145), (5, 5, 0.097), (5, 6, 0.004), (5, 7, 2.9), (5, 8, 0.15), (5, 22, 45), (5, 9, 120), (5, 19, 5), (5, 12, 40), (5, 18, 3), (5, 17, 1);
 -- Cherrys
 INSERT OR IGNORE INTO recetas (producto_id, insumo_id, cantidad_requerida) VALUES
-(6, 4, 0.145), (6, 5, 0.097), (6, 6, 0.004), (6, 7, 2.9), (6, 8, 0.15), (6, 9, 120), (6, 10, 80), (6, 13, 30), (6, 14, 40), (6, 17, 1);
+(6, 4, 0.145), (6, 5, 0.097), (6, 6, 0.004), (6, 7, 2.9), (6, 8, 0.15), (6, 22, 45), (6, 20, 30), (6, 19, 5), (6, 21, 30), (6, 14, 10), (6, 18, 3), (6, 17, 1);
 -- 4 quesos
 INSERT OR IGNORE INTO recetas (producto_id, insumo_id, cantidad_requerida) VALUES
-(7, 4, 0.145), (7, 5, 0.097), (7, 6, 0.004), (7, 7, 2.9), (7, 8, 0.15), (7, 9, 80), (7, 10, 80), (7, 14, 40), (7, 15, 30), (7, 16, 30), (7, 17, 1);
+(7, 4, 0.145), (7, 5, 0.097), (7, 6, 0.004), (7, 7, 2.9), (7, 8, 0.15), (7, 22, 45), (7, 9, 120), (7, 15, 30), (7, 16, 30), (7, 14, 30), (7, 18, 3), (7, 17, 1);
