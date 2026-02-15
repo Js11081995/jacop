@@ -21,6 +21,15 @@ El sistema viene pre-configurado con las 5 variedades principales:
 - Sal: 20g por kilo de harina.
 - Levadura seca: 1g por kilo de harina.
 
-## Instalación
-Sigue los pasos del sistema base. Asegúrate de que PHP tenga soporte para PDO SQLite.
-Para MySQL, consulta la sección de migración en el código fuente o contacta a soporte.
+## Instalación y Base de Datos (¡SÚPER FÁCIL!)
+
+**No necesitas crear ninguna base de datos manualmente.** El sistema lo hace por ti la primera vez que lo abres.
+
+1. **Sube los archivos** de la carpeta `php_app` a tu servidor (hosting).
+2. **Abre el sistema** en tu navegador (ej: `www.tusitio.com/index.php`).
+3. El sistema creará automáticamente un archivo llamado `database.sqlite`. **¡Y listo!** Ya puedes empezar a cargar tus insumos y ventas.
+
+### Notas importantes:
+- El sistema empieza **limpio** para que tú crees tus propios productos y recetas.
+- Si quieres usar **MySQL** en lugar de SQLite (opcional), lee el archivo `README_MYSQL.md`.
+- Asegúrate de que la carpeta donde subas los archivos tenga permisos de escritura (generalmente ya los tiene).

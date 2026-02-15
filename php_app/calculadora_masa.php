@@ -1,7 +1,8 @@
 <?php
 require_once 'db.php';
 
-$harina = isset($_GET['harina']) ? floatval($_GET['harina']) : 0;
+$mensaje = '';
+$harina = isset($_REQUEST['harina']) ? floatval($_REQUEST['harina']) : 0;
 
 $agua = $harina * 0.67;
 $aceite = $harina * 0.03;
@@ -10,6 +11,32 @@ $levadura = $harina * 1;
 
 $peso_total = ($harina * 1000) + ($agua * 1000) + ($aceite * 1000) + $sal + $levadura;
 $bollos = $peso_total > 0 ? floor($peso_total / 250) : 0;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'registrar_produccion' && $bollos > 0) {
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Descontar Harina
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Harina'")->execute([$harina]);
+        // 2. Descontar Agua
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Agua'")->execute([$agua]);
+        // 3. Descontar Aceite
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Aceite'")->execute([$aceite]);
+        // 4. Descontar Sal
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Sal'")->execute([$sal]);
+        // 5. Descontar Levadura
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad - ? WHERE nombre = 'Levadura Seca'")->execute([$levadura]);
+
+        // 6. Sumar Bollos
+        $pdo->prepare("UPDATE insumos SET cantidad = cantidad + ? WHERE nombre = 'Bollo de Masa (250g)'")->execute([$bollos]);
+
+        $pdo->commit();
+        $mensaje = "Producción de $bollos bollos registrada exitosamente. Se han descontado las materias primas del inventario.";
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $mensaje = "Error al registrar producción: " . $e->getMessage();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -22,12 +49,22 @@ $bollos = $peso_total > 0 ? floor($peso_total / 250) : 0;
     <?php include 'header.php'; ?>
 
     <main>
+        <h1>Calculadora de Masa</h1>
+
+        <?php if ($mensaje): ?>
+            <div style="background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 5px solid #2e7d32;">
+                <?php echo $mensaje; ?>
+            </div>
+        <?php endif; ?>
+
         <section class="card">
             <h2>Cálculo de Proporciones</h2>
             <form method="GET">
-                <label for="harina">Kilogramos de Harina:</label>
-                <input type="number" step="0.1" name="harina" id="harina" value="<?php echo $harina; ?>" required>
-                <button type="submit">Calcular</button>
+                <label for="harina">Kilogramos de Harina a preparar:</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="number" step="0.1" name="harina" id="harina" value="<?php echo $harina; ?>" required style="flex: 1;">
+                    <button type="submit" class="btn">Calcular Ingredientes</button>
+                </div>
             </form>
 
             <?php if ($harina > 0): ?>
@@ -41,22 +78,33 @@ $bollos = $peso_total > 0 ? floor($peso_total / 250) : 0;
                     </ul>
                     <hr>
                     <p style="font-size: 1.2em;">
-                        Peso total de la masa: <strong><?php echo number_format($peso_total / 1000, 3); ?> Kg</strong>
+                        Peso total estimado: <strong><?php echo number_format($peso_total / 1000, 3); ?> Kg</strong>
                     </p>
                     <p style="font-size: 1.5em; color: #b71c1c;">
-                        Bollos generados (250g c/u): <strong><?php echo $bollos; ?> unidades</strong>
+                        Bollos resultantes (250g): <strong><?php echo $bollos; ?> unidades</strong>
                     </p>
+
+                    <form method="POST" onsubmit="return confirm('¿Confirmas que has preparado esta masa? Se descontarán los ingredientes del stock y se sumarán los bollos.')">
+                        <input type="hidden" name="harina" value="<?php echo $harina; ?>">
+                        <input type="hidden" name="accion" value="registrar_produccion">
+                        <button type="submit" class="btn" style="width: 100%; font-size: 1.2em; padding: 15px; background: #2e7d32;">
+                            CONFIRMAR Y REGISTRAR PRODUCCIÓN
+                        </button>
+                    </form>
                 </div>
             <?php endif; ?>
         </section>
 
-        <section>
-            <h3>Fórmulas fijas utilizadas (por Kg de harina):</h3>
-            <ul>
-                <li>Hidratación: 70% (670ml Agua / 30ml Aceite)</li>
-                <li>Sal: 20g</li>
-                <li>Levadura Seca: 1g</li>
-            </ul>
+        <section class="card" style="margin-top: 20px;">
+            <h3>Fórmulas de la Casa (por cada 1 Kg de harina):</h3>
+            <table style="width: 100%;">
+                <tr><td>Hidratación</td><td>70%</td></tr>
+                <tr><td>Agua</td><td>670 ml</td></tr>
+                <tr><td>Aceite</td><td>30 ml</td></tr>
+                <tr><td>Sal</td><td>20 g</td></tr>
+                <tr><td>Levadura Seca</td><td>1 g</td></tr>
+                <tr><td>Peso por Bollo</td><td>250 g</td></tr>
+            </table>
         </section>
     </main>
 </body>
