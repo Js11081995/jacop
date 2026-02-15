@@ -5,18 +5,26 @@ $mensaje = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion'])) {
-        if ($_POST['accion'] === 'crear') {
-            $stmt = $pdo->prepare("INSERT INTO insumos (nombre, cantidad, unidad, stock_minimo, precio_unitario, tipo) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$_POST['nombre'], $_POST['cantidad'], $_POST['unidad'], $_POST['stock_minimo'], $_POST['precio_unitario'], $_POST['tipo']]);
-            $mensaje = "Insumo creado correctamente.";
-        } elseif ($_POST['accion'] === 'actualizar') {
-            $stmt = $pdo->prepare("UPDATE insumos SET cantidad = ?, stock_minimo = ?, precio_unitario = ? WHERE id = ?");
-            $stmt->execute([$_POST['cantidad'], $_POST['stock_minimo'], $_POST['precio_unitario'], $_POST['id']]);
-            $mensaje = "Insumo actualizado.";
-        } elseif ($_POST['accion'] === 'eliminar') {
-            $stmt = $pdo->prepare("DELETE FROM insumos WHERE id = ?");
-            $stmt->execute([$_POST['id']]);
-            $mensaje = "Insumo eliminado.";
+        try {
+            if ($_POST['accion'] === 'crear') {
+                $stmt = $pdo->prepare("INSERT INTO insumos (nombre, cantidad, unidad, stock_minimo, precio_unitario, tipo) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$_POST['nombre'], $_POST['cantidad'], $_POST['unidad'], $_POST['stock_minimo'], $_POST['precio_unitario'], $_POST['tipo']]);
+                $mensaje = "Insumo creado correctamente.";
+            } elseif ($_POST['accion'] === 'actualizar') {
+                $stmt = $pdo->prepare("UPDATE insumos SET cantidad = ?, stock_minimo = ?, precio_unitario = ? WHERE id = ?");
+                $stmt->execute([$_POST['cantidad'], $_POST['stock_minimo'], $_POST['precio_unitario'], $_POST['id']]);
+                $mensaje = "Insumo actualizado.";
+            } elseif ($_POST['accion'] === 'eliminar') {
+                $stmt = $pdo->prepare("DELETE FROM insumos WHERE id = ?");
+                $stmt->execute([$_POST['id']]);
+                $mensaje = "Insumo eliminado.";
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000) {
+                $mensaje = "Error: Ya existe un insumo con ese nombre.";
+            } else {
+                $mensaje = "Error en la base de datos: " . $e->getMessage();
+            }
         }
     }
 }

@@ -5,14 +5,22 @@ $mensaje = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion'])) {
-        if ($_POST['accion'] === 'crear_promo') {
-            $stmt = $pdo->prepare("INSERT INTO promociones (nombre, precio_promo, descripcion) VALUES (?, ?, ?)");
-            $stmt->execute([$_POST['nombre'], $_POST['precio_promo'], $_POST['descripcion']]);
-            $mensaje = "Promoción creada correctamente.";
-        } elseif ($_POST['accion'] === 'eliminar') {
-            $stmt = $pdo->prepare("DELETE FROM promociones WHERE id = ?");
-            $stmt->execute([$_POST['id']]);
-            $mensaje = "Promoción eliminada.";
+        try {
+            if ($_POST['accion'] === 'crear_promo') {
+                $stmt = $pdo->prepare("INSERT INTO promociones (nombre, precio_promo, descripcion) VALUES (?, ?, ?)");
+                $stmt->execute([$_POST['nombre'], $_POST['precio_promo'], $_POST['descripcion']]);
+                $mensaje = "Promoción creada correctamente.";
+            } elseif ($_POST['accion'] === 'eliminar') {
+                $stmt = $pdo->prepare("DELETE FROM promociones WHERE id = ?");
+                $stmt->execute([$_POST['id']]);
+                $mensaje = "Promoción eliminada.";
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000) {
+                $mensaje = "Error: Ya existe una promoción con ese nombre.";
+            } else {
+                $mensaje = "Error: " . $e->getMessage();
+            }
         }
     }
 }

@@ -5,30 +5,34 @@ $mensaje = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion'])) {
-        if ($_POST['accion'] === 'crear_producto') {
-            $stmt = $pdo->prepare("INSERT INTO productos (nombre, precio_venta, stock_actual) VALUES (?, ?, ?)");
-            $stmt->execute([$_POST['nombre'], $_POST['precio_venta'], 0]);
-            $mensaje = "Producto '" . htmlspecialchars($_POST['nombre']) . "' creado correctamente.";
-        } elseif ($_POST['accion'] === 'editar_producto') {
-            $stmt = $pdo->prepare("UPDATE productos SET nombre = ?, precio_venta = ? WHERE id = ?");
-            $stmt->execute([$_POST['nombre'], $_POST['precio_venta'], $_POST['id']]);
-            $mensaje = "Producto actualizado.";
-        } elseif ($_POST['accion'] === 'añadir_insumo_receta') {
-            try {
+        try {
+            if ($_POST['accion'] === 'crear_producto') {
+                $stmt = $pdo->prepare("INSERT INTO productos (nombre, precio_venta, stock_actual) VALUES (?, ?, ?)");
+                $stmt->execute([$_POST['nombre'], $_POST['precio_venta'], 0]);
+                $mensaje = "Producto '" . htmlspecialchars($_POST['nombre']) . "' creado correctamente.";
+            } elseif ($_POST['accion'] === 'editar_producto') {
+                $stmt = $pdo->prepare("UPDATE productos SET nombre = ?, precio_venta = ? WHERE id = ?");
+                $stmt->execute([$_POST['nombre'], $_POST['precio_venta'], $_POST['id']]);
+                $mensaje = "Producto actualizado.";
+            } elseif ($_POST['accion'] === 'añadir_insumo_receta') {
                 $stmt = $pdo->prepare("INSERT INTO recetas (producto_id, insumo_id, cantidad_requerida) VALUES (?, ?, ?)");
                 $stmt->execute([$_POST['producto_id'], $_POST['insumo_id'], $_POST['cantidad_requerida']]);
                 $mensaje = "Insumo añadido a la receta.";
-            } catch (PDOException $e) {
-                $mensaje = "Error: El insumo ya está en la receta o los datos son inválidos.";
+            } elseif ($_POST['accion'] === 'eliminar_insumo_receta') {
+                $stmt = $pdo->prepare("DELETE FROM recetas WHERE id = ?");
+                $stmt->execute([$_POST['id']]);
+                $mensaje = "Insumo eliminado de la receta.";
+            } elseif ($_POST['accion'] === 'eliminar_producto') {
+                $pdo->prepare("DELETE FROM recetas WHERE producto_id = ?")->execute([$_POST['id']]);
+                $pdo->prepare("DELETE FROM productos WHERE id = ?")->execute([$_POST['id']]);
+                $mensaje = "Producto eliminado.";
             }
-        } elseif ($_POST['accion'] === 'eliminar_insumo_receta') {
-            $stmt = $pdo->prepare("DELETE FROM recetas WHERE id = ?");
-            $stmt->execute([$_POST['id']]);
-            $mensaje = "Insumo eliminado de la receta.";
-        } elseif ($_POST['accion'] === 'eliminar_producto') {
-            $pdo->prepare("DELETE FROM recetas WHERE producto_id = ?")->execute([$_POST['id']]);
-            $pdo->prepare("DELETE FROM productos WHERE id = ?")->execute([$_POST['id']]);
-            $mensaje = "Producto eliminado.";
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000) {
+                $mensaje = "Error: Ya existe un registro con ese nombre o el insumo ya está en la receta.";
+            } else {
+                $mensaje = "Error en la base de datos: " . $e->getMessage();
+            }
         }
     }
 }
