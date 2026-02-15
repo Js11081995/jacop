@@ -31,19 +31,7 @@ $insumos = $pdo->query("SELECT * FROM insumos ORDER BY nombre ASC")->fetchAll();
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>El Horno Rojo - Inventario de Insumos</h1>
-        <nav>
-            <a href="index.php">Dashboard</a> |
-            <a href="insumos.php">Insumos</a> |
-            <a href="productos.php">Productos</a> |
-            <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a> |
-            <a href="mayoristas.php">Mayoristas</a> |
-            <a href="promociones.php">Promociones</a> |
-            <a href="calculadora_masa.php">Calculadora</a>
-        </nav>
-    </header>
+    <?php include 'header.php'; ?>
 
     <main>
         <?php if ($mensaje): ?>

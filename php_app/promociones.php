@@ -27,17 +27,7 @@ $promociones = $pdo->query("SELECT * FROM promociones ORDER BY nombre ASC")->fet
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>El Horno Rojo - Promociones y Combos</h1>
-        <nav>
-            <a href="index.php">Dashboard</a> |
-            <a href="insumos.php">Insumos</a> |
-            <a href="productos.php">Productos</a> |
-            <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a> |
-            <a href="promociones.php">Promociones</a>
-        </nav>
-    </header>
+    <?php include 'header.php'; ?>
 
     <main>
         <?php if ($mensaje): ?>

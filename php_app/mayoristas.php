@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // 2. Descontar stock
                 $stmt_upd = $pdo->prepare("UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?");
-                $stmt_upd.execute([$cantidad, $producto_id]);
+                $stmt_upd->execute([$cantidad, $producto_id]);
 
                 // 3. Registrar pedido
                 $stmt_ins = $pdo->prepare("INSERT INTO pedidos_mayoristas (cliente, producto_id, cantidad, precio_unitario, total, estado) VALUES (?, ?, ?, ?, ?, 'entregado')");
@@ -58,17 +58,7 @@ $pedidos = $pdo->query("SELECT pm.*, p.nombre as producto_nombre FROM pedidos_ma
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>El Horno Rojo - Gestión Mayorista</h1>
-        <nav>
-            <a href="index.php">Dashboard</a> |
-            <a href="insumos.php">Insumos</a> |
-            <a href="productos.php">Productos</a> |
-            <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a> |
-            <a href="mayoristas.php">Mayoristas</a>
-        </nav>
-    </header>
+    <?php include 'header.php'; ?>
 
     <main>
         <?php if ($mensaje): ?>

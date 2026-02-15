@@ -19,17 +19,7 @@ $bollos = $peso_total > 0 ? floor($peso_total / 250) : 0;
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>El Horno Rojo - Calculadora de Masa</h1>
-        <nav>
-            <a href="index.php">Dashboard</a> |
-            <a href="insumos.php">Insumos</a> |
-            <a href="productos.php">Productos</a> |
-            <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a> |
-            <a href="calculadora_masa.php">Calculadora</a>
-        </nav>
-    </header>
+    <?php include 'header.php'; ?>
 
     <main>
         <section class="card">

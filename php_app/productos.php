@@ -36,19 +36,7 @@ $todos_insumos = $pdo->query("SELECT id, nombre, unidad FROM insumos ORDER BY no
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>El Horno Rojo - Inventario de Productos y Recetas</h1>
-        <nav>
-            <a href="index.php">Dashboard</a> |
-            <a href="insumos.php">Insumos</a> |
-            <a href="productos.php">Productos</a> |
-            <a href="produccion.php">Producción</a> |
-            <a href="ventas.php">Ventas</a> |
-            <a href="mayoristas.php">Mayoristas</a> |
-            <a href="promociones.php">Promociones</a> |
-            <a href="calculadora_masa.php">Calculadora</a>
-        </nav>
-    </header>
+    <?php include 'header.php'; ?>
 
     <main>
         <?php if ($mensaje): ?>
