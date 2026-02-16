@@ -36,10 +36,12 @@ CREATE TABLE IF NOT EXISTS produccion (
 
 CREATE TABLE IF NOT EXISTS ventas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    venta_id TEXT, -- Identificador único para ventas con múltiples items
     cliente TEXT,
     producto_id INTEGER,
     cantidad INTEGER,
     precio_unitario REAL,
+    costo_unitario REAL DEFAULT 0, -- Costo de producción en el momento de la venta
     total REAL,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (producto_id) REFERENCES productos(id)
